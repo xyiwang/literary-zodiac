@@ -76,7 +76,7 @@ export default function Home() {
 
   return (
     <main
-      className="min-h-screen flex flex-col items-center justify-center px-6 py-20"
+      className="min-h-screen flex flex-col items-center justify-center px-6 py-24"
       style={{
         background: '#0a0a1a',
         fontFamily: 'serif',
@@ -106,17 +106,14 @@ export default function Home() {
         ))}
       </div>
 
-      <div
-        className="relative max-w-xl w-full mx-auto"
-        style={{ zIndex: 1, width: 'min(100%, 42rem)', margin: '0 auto', position: 'relative' }}
-      >
+      <div className="relative w-full max-w-3xl mx-auto" style={{ zIndex: 1 }}>
         {/* Header */}
-        <div className="text-center mb-14">
-          <p className="text-xs tracking-[0.4em] text-amber-700 mb-4">LITERARY ZODIAC</p>
-          <h1 className="text-4xl md:text-5xl tracking-widest text-amber-100 mb-5">
+        <div className="text-center mb-20 md:mb-24">
+          <p className="text-xs tracking-[0.42em] text-amber-700/90 mb-5">LITERARY ZODIAC</p>
+          <h1 className="text-4xl md:text-5xl tracking-[0.18em] text-amber-100 mb-7">
             文学星盘
           </h1>
-          <p className="text-gray-500 text-sm leading-relaxed max-w-sm mx-auto">
+          <p className="text-gray-500 text-sm leading-relaxed max-w-md mx-auto">
             你的文字比你更诚实。<br />
             输入一段原创文字，发现你与一百位作家之间的隐秘联系。
           </p>
@@ -124,7 +121,7 @@ export default function Home() {
 
         {/* Textarea */}
         <div
-          className="relative"
+          className="relative mx-auto max-w-2xl rounded-[2px] border border-amber-900/40 bg-[#0b0d1d]/80 p-1.5 shadow-[0_0_0_1px_rgba(201,168,76,0.06),0_18px_38px_rgba(0,0,0,0.45)]"
           onMouseDown={() => {
             if (!loading) textareaRef.current?.focus()
           }}
@@ -133,10 +130,10 @@ export default function Home() {
             ref={textareaRef}
             value={text}
             onChange={e => { setText(e.target.value); setError('') }}
-            placeholder={"在这里粘贴你的原创文字（小说、散文、诗歌、随笔均可）\n\n至少100字。你的文字只用于生成星盘，不会被储存。"}
+            placeholder="在这里粘贴你的原创文字"
             disabled={loading}
-            rows={10}
-            className="w-full bg-transparent rounded border border-gray-800 p-5 text-gray-300 text-sm leading-loose resize-none focus:outline-none focus:border-amber-900 placeholder-gray-700 transition-colors disabled:opacity-40"
+            rows={11}
+            className="w-full rounded-[1px] border border-gray-800/90 bg-[#090b18]/85 px-6 py-6 text-gray-300 text-sm leading-loose resize-none focus:outline-none focus:border-amber-700/70 placeholder-gray-700 transition-colors disabled:opacity-40"
             style={{
               fontFamily: 'serif',
               width: '100%',
@@ -159,18 +156,15 @@ export default function Home() {
         )}
 
         {/* Submit */}
-        <button
-          onClick={handleSubmit}
-          disabled={loading}
-          className="mt-6 w-full py-3.5 border border-amber-900 text-amber-200 text-xs tracking-[0.3em] hover:bg-amber-950/40 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-        >
-          {loading ? LOADING_LINES[loadingLine] : '解读我的文字 →'}
-        </button>
-
-        {/* Footer note */}
-        <p className="text-center text-gray-700 text-xs mt-10 tracking-wide">
-          100位作家 · 三个星位 · 你的专属文学星座
-        </p>
+        <div className="mt-8 flex justify-center">
+          <button
+            onClick={handleSubmit}
+            disabled={loading}
+            className="w-72 max-w-full py-3.5 border border-amber-900 text-amber-200 text-xs tracking-[0.26em] hover:bg-amber-950/40 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            {loading ? LOADING_LINES[loadingLine] : '解读我的文字 →'}
+          </button>
+        </div>
       </div>
     </main>
   )
