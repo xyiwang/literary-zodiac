@@ -32,8 +32,36 @@ export default function Home() {
     )
   }, [])
 
+  const sanitizeSubmissionText = (input: string) => {
+    const fullToHalfMap: Record<string, string> = {
+      '，': ',',
+      '。': '.',
+      '！': '!',
+      '？': '?',
+      '：': ':',
+      '；': ';',
+      '（': '(',
+      '）': ')',
+      '【': '[',
+      '】': ']',
+      '《': '<',
+      '》': '>',
+      '“': '"',
+      '”': '"',
+      '‘': "'",
+      '’': "'",
+      '、': ',',
+      '　': ' ',
+    }
+
+    return input
+      .replace(/\uFFFD/g, '')
+      .replace(/[，。！？：；（）【】《》“”‘’、　]/g, ch => fullToHalfMap[ch] ?? ch)
+  }
+
   const handleSubmit = async () => {
-    if (text.trim().length < 100) {
+    const cleanedText = sanitizeSubmissionText(text).trim()
+    if (cleanedText.length < 100) {
       setError('请至少输入100字的原创文字')
       return
     }
@@ -44,7 +72,7 @@ export default function Home() {
       const res = await fetch('/api/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text }),
+        body: JSON.stringify({ text: cleanedText }),
       })
       const data = await res.json()
 
