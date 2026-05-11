@@ -1,36 +1,82 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 文学星盘 · 开发启动指南
 
-## Getting Started
+## 第一步：创建 Next.js 项目
 
-First, run the development server:
+```bash
+npx create-next-app@latest literary-zodiac --typescript --tailwind --app --src-dir --import-alias "@/*"
+cd literary-zodiac
+```
+
+## 第二步：安装依赖
+
+```bash
+npm install @anthropic-ai/sdk
+```
+
+## 第三步：把所有文件复制进去
+
+将以下文件复制到对应位置：
+
+```
+src/
+  app/
+    globals.css          ← 替换原有文件
+    layout.tsx           ← 替换原有文件
+    page.tsx             ← 替换原有文件
+    api/
+      analyze/
+        route.ts         ← 新建
+    result/
+      page.tsx           ← 新建
+  components/
+    ZodiacChart.tsx      ← 新建
+  data/
+    authors.json         ← 新建
+  lib/
+    prompt.ts            ← 新建
+  types/
+    index.ts             ← 新建
+```
+
+## 第四步：配置环境变量
+
+在项目根目录创建 `.env.local`：
+
+```
+ANTHROPIC_API_KEY=你的API密钥
+```
+
+API Key 在 https://console.anthropic.com 获取。
+
+## 第五步：启动开发服务器
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+打开 http://localhost:3000
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 第六步：部署到 Vercel
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm install -g vercel
+vercel
+```
 
-## Learn More
+在 Vercel 控制台添加环境变量 `ANTHROPIC_API_KEY`。
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 常见问题
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+**Q: 分析失败怎么办？**
+查看终端报错。最常见的是 API Key 没配置，或者 Claude 返回了非 JSON 格式（重试即可）。
 
-## Deploy on Vercel
+**Q: 想调整 prompt 让结果更准？**
+编辑 `src/lib/prompt.ts`，重点调整月亮位的要求。
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+**Q: 想加更多作家？**
+在 `src/data/authors.json` 末尾追加，格式和现有条目一致即可，不需要改其他文件。
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+**Q: 想修改颜色主题？**
+`src/app/globals.css` 控制全局颜色，`src/components/ZodiacChart.tsx` 控制星盘配色。
