@@ -104,17 +104,42 @@ export default function ZodiacChart({
   const starDegrees = degrees ?? fallbackDegrees
 
   const starPoints = useMemo(
-    () =>
-      STAR_KEYS.map(key => {
+    () => {
+      const base = STAR_KEYS.map(key => ({ key, degree: starDegrees[key] }))
+      const sorted = [...base].sort((a, b) => a.degree - b.degree)
+      const tangentOffsets = new Map<StarKey, number>()
+      sorted.forEach(item => tangentOffsets.set(item.key, 0))
+
+      // If neighboring stars are too close in angle, push labels
+      // in opposite tangent directions to avoid overlaps.
+      for (let i = 0; i < sorted.length; i += 1) {
+        const curr = sorted[i]
+        const next = sorted[(i + 1) % sorted.length]
+        const rawDiff = Math.abs(curr.degree - next.degree)
+        const diff = Math.min(rawDiff, 360 - rawDiff)
+        if (diff < 42) {
+          tangentOffsets.set(curr.key, (tangentOffsets.get(curr.key) ?? 0) - 18)
+          tangentOffsets.set(next.key, (tangentOffsets.get(next.key) ?? 0) + 18)
+        }
+      }
+
+      return STAR_KEYS.map(key => {
         const degree = starDegrees[key]
+        const angleRad = ((degree - 90) * Math.PI) / 180
         const point = toPoint(degree, STAR_RADIUS)
-        const labelPoint = toPoint(degree, OUTER_RADIUS + 26)
-        const align = Math.cos(((degree - 90) * Math.PI) / 180)
+        const baseLabelPoint = toPoint(degree, OUTER_RADIUS + 62)
+        const tangentOffset = tangentOffsets.get(key) ?? 0
+        const labelPoint = {
+          x: baseLabelPoint.x + (-Math.sin(angleRad) * tangentOffset),
+          y: baseLabelPoint.y + (Math.cos(angleRad) * tangentOffset),
+        }
+        const align = Math.cos(angleRad)
         const anchor = align > 0.25 ? 'start' : align < -0.25 ? 'end' : 'middle'
         const degreeLabel = Math.round(degree) % 360
 
         return { key, degree, degreeLabel, point, labelPoint, anchor }
-      }),
+      })
+    },
     [starDegrees]
   )
 
@@ -168,8 +193,8 @@ export default function ZodiacChart({
 
       {/* SVG */}
       <svg
-        viewBox="-24 -24 448 448"
-        className="w-full max-w-[18rem] sm:max-w-lg"
+        viewBox="-110 -110 620 620"
+        className="w-full max-w-[22rem] sm:max-w-4xl"
         style={{ filter: 'drop-shadow(0 0 20px rgba(201,168,76,0.08))' }}
       >
         {/* Dark plate */}
@@ -314,10 +339,10 @@ export default function ZodiacChart({
 
               {/* Position label */}
               <foreignObject
-                x={star.anchor === 'start' ? tx + 2 : star.anchor === 'end' ? tx - 96 : tx - 47}
-                y={ty - 14}
-                width="96"
-                height="54"
+                x={star.anchor === 'start' ? tx + 3 : star.anchor === 'end' ? tx - 118 : tx - 58}
+                y={ty - 16}
+                width="118"
+                height="66"
                 style={{ overflow: 'visible', opacity: animated ? 1 : 0, transition: 'opacity 1s ease 0.3s' }}
               >
                 <div
@@ -325,7 +350,7 @@ export default function ZodiacChart({
                     color: '#6B6B8A',
                     fontSize: '8px',
                     letterSpacing: '1px',
-                    lineHeight: 1.2,
+                    lineHeight: 1.18,
                     textAlign: star.anchor === 'start' ? 'left' : star.anchor === 'end' ? 'right' : 'center',
                     whiteSpace: 'normal',
                     wordBreak: 'break-word',

@@ -88,15 +88,17 @@ export default function ResultPage() {
 
         <div ref={cardRef}>
           {/* Chart */}
-          <ZodiacChart
-            sunAuthor={result.sunAuthor}
-            moonAuthor={result.moonAuthor}
-            mercuryAuthor={result.mercuryAuthor}
-            venusAuthor={result.venusAuthor}
-            risingAuthor={result.risingAuthor}
-            degrees={result.degrees}
-            constellationName={result.constellationName}
-          />
+          <div className="relative left-1/2 w-screen max-w-6xl -translate-x-1/2 px-4">
+            <ZodiacChart
+              sunAuthor={result.sunAuthor}
+              moonAuthor={result.moonAuthor}
+              mercuryAuthor={result.mercuryAuthor}
+              venusAuthor={result.venusAuthor}
+              risingAuthor={result.risingAuthor}
+              degrees={result.degrees}
+              constellationName={result.constellationName}
+            />
+          </div>
 
           {/* Description */}
           <div className="mt-10 border-t border-gray-900 pt-8">

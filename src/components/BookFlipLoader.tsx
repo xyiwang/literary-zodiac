@@ -1,6 +1,6 @@
 'use client'
 
-import { type CSSProperties, useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 const AUTHORS = [
   { file: '杜拉斯.png', name: '杜拉斯' },
@@ -20,292 +20,290 @@ const AUTHORS = [
   { file: '聂鲁达.png', name: '聂鲁达' },
 ]
 
-// Shuffle and pick ~12 authors for the animation
-function getRandomAuthors() {
-  return [...AUTHORS].sort(() => Math.random() - 0.5).slice(0, 12)
-}
-
 interface Props {
   active?: boolean
   onComplete: () => void
 }
 
-const FLIP_DURATION_MS = 220
+const FLIP_DURATION_MS = 150
+
+function getRandomAuthors() {
+  const arr = [...AUTHORS]
+  for (let i = arr.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[arr[i], arr[j]] = [arr[j], arr[i]]
+  }
+  return arr.slice(0, 12)
+}
 
 export default function BookFlipLoader({ active = true, onComplete }: Props) {
-  const [authors] = useState(getRandomAuthors)
+  const [sequence, setSequence] = useState(AUTHORS.slice(0, 12))
   const [currentIndex, setCurrentIndex] = useState(0)
   const [nextIndex, setNextIndex] = useState<number | null>(null)
   const [flipping, setFlipping] = useState(false)
 
+  const intervals = useMemo(
+    () => [90, 120, 160, 220, 300, 390, 500, 620, 760, 900, 1040],
+    []
+  )
+
   useEffect(() => {
     if (!active) return
 
-    let index = 0
-    // Intervals: start fast, then gradually slow down
-    const intervals = [80, 110, 140, 180, 230, 290, 360, 440, 530, 630, 760, 900]
-    const timers: Array<ReturnType<typeof setTimeout>> = []
-
-    function flip() {
-      if (index >= authors.length - 1) {
-        timers.push(setTimeout(onComplete, 300))
-        return
-      }
-
-      const upcoming = index + 1
-      setNextIndex(upcoming)
-      setFlipping(true)
-      timers.push(setTimeout(() => {
-        index = upcoming
-        setCurrentIndex(upcoming)
-        setNextIndex(null)
-        setFlipping(false)
-        const delay = intervals[Math.min(index, intervals.length - 1)]
-        timers.push(setTimeout(flip, delay))
-      }, FLIP_DURATION_MS))
-    }
-
+    const picked = getRandomAuthors()
+    setSequence(picked)
     setCurrentIndex(0)
     setNextIndex(null)
     setFlipping(false)
 
-    timers.push(setTimeout(flip, 600))
+    const timers: Array<ReturnType<typeof setTimeout>> = []
+    let step = 0
+
+    const runFlip = () => {
+      if (step >= picked.length - 1) {
+        timers.push(setTimeout(onComplete, 240))
+        return
+      }
+
+      const upcoming = step + 1
+      setNextIndex(upcoming)
+      setFlipping(true)
+
+      timers.push(
+        setTimeout(() => {
+          setCurrentIndex(upcoming)
+          setNextIndex(null)
+          setFlipping(false)
+          step = upcoming
+          const wait = intervals[Math.min(step, intervals.length - 1)]
+          timers.push(setTimeout(runFlip, wait))
+        }, FLIP_DURATION_MS)
+      )
+    }
+
+    timers.push(setTimeout(runFlip, 380))
+
     return () => {
       timers.forEach(clearTimeout)
     }
-  }, [active, authors, onComplete])
+  }, [active, intervals, onComplete])
 
   if (!active) return null
 
-  const author = authors[currentIndex]
-  const nextAuthor = nextIndex !== null ? authors[nextIndex] : null
-  const renderPage = (item: { file: string; name: string }) => (
-    <>
-      <div style={styles.portraitWrap}>
-        <img
-          src={`/authors/${item.file}`}
-          alt={item.name}
-          style={styles.portrait}
-        />
-      </div>
-      <p style={styles.name}>{item.name}</p>
-    </>
-  )
+  const current = sequence[currentIndex]
+  const next = nextIndex !== null ? sequence[nextIndex] : null
 
   return (
-    <div
-      className="fixed inset-0 flex flex-col items-center justify-center"
-      style={{
-        zIndex: 9999,
-        background: '#0a0a1a',
-      }}
-    >
-      <div
-        style={{
-          position: 'absolute',
-          width: '460px',
-          height: '120px',
-          borderRadius: '50%',
-          background: 'radial-gradient(ellipse at center, rgba(0,0,0,0.42), rgba(0,0,0,0) 72%)',
-          filter: 'blur(4px)',
-          transform: 'translateY(150px)',
-          pointerEvents: 'none',
-        }}
-      />
-      {/* Book container */}
-      <div
-        style={{
-          width: '280px',
-          height: '380px',
-          position: 'relative',
-          perspective: '1400px',
-          transform: 'rotateZ(-1.4deg) rotateX(3deg)',
-        }}
-      >
-        {/* Static page */}
-        <div
-          style={{
-            ...styles.page,
-          }}
-        >
-          {renderPage(author)}
+    <div className="book-loader-overlay">
+      <div className="book-shadow" />
+
+      <div className="book-frame">
+        <div className="page-static">
+          <PageContent file={current.file} name={current.name} />
         </div>
 
-        {/* 3D flip: outgoing page 0 -> -180 */}
-        {flipping && nextAuthor && (
+        {flipping && next && (
           <>
-            <div style={{ ...styles.pageSheet, animation: `flipOut ${FLIP_DURATION_MS}ms ease-in-out forwards, sheetShadeOut ${FLIP_DURATION_MS}ms ease-in-out forwards`, zIndex: 4 }}>
-              <div style={{ ...styles.face, ...styles.faceFront }}>
-                {renderPage(author)}
+            <div className="sheet-out">
+              <div className="sheet-face face-front">
+                <PageContent file={current.file} name={current.name} />
               </div>
-              <div style={{ ...styles.face, ...styles.faceBack, ...styles.paperBack }} />
+              <div className="sheet-face face-back" />
             </div>
 
-            {/* 3D flip: incoming page -180 -> 0 */}
-            <div style={{ ...styles.pageSheet, animation: `flipIn ${FLIP_DURATION_MS}ms ease-in-out forwards, sheetShadeIn ${FLIP_DURATION_MS}ms ease-in-out forwards`, zIndex: 3 }}>
-              <div style={{ ...styles.face, ...styles.faceFrontIncoming }}>
-                {renderPage(nextAuthor)}
+            <div className="sheet-in">
+              <div className="sheet-face face-front-in">
+                <PageContent file={next.file} name={next.name} />
               </div>
-              <div style={{ ...styles.face, ...styles.faceBackIncoming, ...styles.paperBack }} />
+              <div className="sheet-face face-back-in" />
             </div>
           </>
         )}
 
-        <div
-          style={{
-            position: 'absolute',
-            left: 0,
-            top: '4px',
-            bottom: '4px',
-            width: '8px',
-            background: 'linear-gradient(to right, #6b4c2a, #8b6914)',
-            borderRadius: '2px 0 0 2px',
-          }}
-        />
-
-        <style jsx>{`
-          @keyframes flipOut {
-            0% {
-              transform: rotateY(0deg) rotateX(0deg) translateZ(0);
-            }
-            35% {
-              transform: rotateY(-72deg) rotateX(4deg) translateZ(8px);
-            }
-            70% {
-              transform: rotateY(-146deg) rotateX(1deg) translateZ(4px);
-            }
-            100% {
-              transform: rotateY(-180deg) rotateX(0deg) translateZ(0);
-            }
-          }
-          @keyframes flipIn {
-            0% {
-              transform: rotateY(-180deg) rotateX(0deg) translateZ(0);
-            }
-            30% {
-              transform: rotateY(-130deg) rotateX(-3deg) translateZ(7px);
-            }
-            68% {
-              transform: rotateY(-52deg) rotateX(-1deg) translateZ(4px);
-            }
-            100% {
-              transform: rotateY(0deg) rotateX(0deg) translateZ(0);
-            }
-          }
-          @keyframes sheetShadeOut {
-            0% {
-              filter: drop-shadow(-2px 2px 4px rgba(0, 0, 0, 0.2));
-            }
-            55% {
-              filter: drop-shadow(-10px 8px 12px rgba(0, 0, 0, 0.38));
-            }
-            100% {
-              filter: drop-shadow(-2px 2px 3px rgba(0, 0, 0, 0.12));
-            }
-          }
-          @keyframes sheetShadeIn {
-            0% {
-              filter: drop-shadow(-8px 6px 10px rgba(0, 0, 0, 0.28));
-            }
-            100% {
-              filter: drop-shadow(-2px 2px 3px rgba(0, 0, 0, 0.12));
-            }
-          }
-        `}</style>
+        <div className="book-spine" />
       </div>
 
-      <p
-        style={{
-          marginTop: '32px',
-          fontSize: '11px',
-          letterSpacing: '4px',
-          color: '#3a3a5a',
-          fontFamily: 'serif',
-        }}
-      >
-        正在生成你的文学星盘……
-      </p>
+      <p className="loader-text">正在生成你的文学星盘……</p>
+
+      <style jsx>{`
+        .book-loader-overlay {
+          position: fixed;
+          inset: 0;
+          z-index: 9999;
+          background: #0a0a1a;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+        }
+        .book-shadow {
+          position: absolute;
+          width: 520px;
+          max-width: 70vw;
+          height: 120px;
+          border-radius: 50%;
+          background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.46), rgba(0, 0, 0, 0) 72%);
+          filter: blur(4px);
+          transform: translateY(190px);
+          pointer-events: none;
+        }
+        .book-frame {
+          width: 290px;
+          max-width: 84vw;
+          aspect-ratio: 3 / 4;
+          position: relative;
+          perspective: 1400px;
+          transform: rotateZ(-0.8deg) rotateX(2deg);
+        }
+        .page-static {
+          position: absolute;
+          inset: 0;
+          background: #c8a97e;
+          border-radius: 4px 12px 12px 4px;
+          box-shadow: 4px 4px 20px rgba(0, 0, 0, 0.62), inset -3px 0 8px rgba(0, 0, 0, 0.22);
+          overflow: hidden;
+          padding: 18px;
+          backface-visibility: hidden;
+          transform-style: preserve-3d;
+        }
+        .sheet-out,
+        .sheet-in {
+          position: absolute;
+          inset: 0;
+          transform-origin: left center;
+          transform-style: preserve-3d;
+          backface-visibility: hidden;
+          will-change: transform, filter;
+          border-radius: 4px 12px 12px 4px;
+        }
+        .sheet-out {
+          z-index: 4;
+          animation: pageOut ${FLIP_DURATION_MS}ms ease-in-out forwards;
+        }
+        .sheet-in {
+          z-index: 3;
+          transform: rotateY(-180deg);
+          animation: pageIn ${FLIP_DURATION_MS}ms ease-in-out forwards;
+        }
+        .sheet-face {
+          position: absolute;
+          inset: 0;
+          border-radius: 4px 12px 12px 4px;
+          background: #c8a97e;
+          padding: 18px;
+          backface-visibility: hidden;
+          transform-style: preserve-3d;
+          box-shadow: inset 0 0 0 1px rgba(101, 68, 35, 0.12), inset -6px 0 10px rgba(55, 30, 12, 0.12);
+        }
+        .face-front {
+          transform: rotateY(0deg);
+        }
+        .face-back {
+          transform: rotateY(180deg);
+          background: linear-gradient(180deg, #c9b08a 0%, #b79b74 45%, #b39974 100%);
+        }
+        .face-front-in {
+          transform: rotateY(180deg);
+        }
+        .face-back-in {
+          transform: rotateY(360deg);
+          background: linear-gradient(180deg, #c9b08a 0%, #b79b74 45%, #b39974 100%);
+        }
+        .book-spine {
+          position: absolute;
+          left: 0;
+          top: 6px;
+          bottom: 6px;
+          width: 8px;
+          border-radius: 2px 0 0 2px;
+          background: linear-gradient(to right, #6b4c2a, #8b6914);
+        }
+        .loader-text {
+          margin-top: 28px;
+          font-size: 11px;
+          letter-spacing: 0.28em;
+          color: #4e4e70;
+          font-family: serif;
+        }
+        @keyframes pageOut {
+          0% {
+            transform: rotateY(0deg);
+            filter: drop-shadow(-2px 2px 4px rgba(0, 0, 0, 0.2));
+          }
+          55% {
+            transform: rotateY(-102deg);
+            filter: drop-shadow(-10px 8px 12px rgba(0, 0, 0, 0.36));
+          }
+          100% {
+            transform: rotateY(-180deg);
+            filter: drop-shadow(-2px 2px 3px rgba(0, 0, 0, 0.14));
+          }
+        }
+        @keyframes pageIn {
+          0% {
+            transform: rotateY(-180deg);
+            filter: drop-shadow(-7px 5px 9px rgba(0, 0, 0, 0.26));
+          }
+          45% {
+            transform: rotateY(-84deg);
+            filter: drop-shadow(-6px 4px 8px rgba(0, 0, 0, 0.24));
+          }
+          100% {
+            transform: rotateY(0deg);
+            filter: drop-shadow(-2px 2px 3px rgba(0, 0, 0, 0.14));
+          }
+        }
+      `}</style>
     </div>
   )
 }
 
-const styles: Record<string, CSSProperties> = {
-  page: {
-    width: '100%',
-    height: '100%',
-    background: '#c8a97e',
-    borderRadius: '4px 12px 12px 4px',
-    boxShadow: '4px 4px 20px rgba(0,0,0,0.6), inset -3px 0 8px rgba(0,0,0,0.2)',
-    overflow: 'hidden',
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: '20px',
-    backfaceVisibility: 'hidden',
-    transformStyle: 'preserve-3d',
-  },
-  pageSheet: {
-    position: 'absolute',
-    inset: 0,
-    transformOrigin: 'left center',
-    transformStyle: 'preserve-3d',
-    backfaceVisibility: 'hidden',
-    willChange: 'transform, filter',
-  },
-  face: {
-    position: 'absolute',
-    inset: 0,
-    padding: '20px',
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: '4px 12px 12px 4px',
-    background: '#c8a97e',
-    backfaceVisibility: 'hidden',
-    transformStyle: 'preserve-3d',
-    boxShadow: 'inset 0 0 0 1px rgba(101, 68, 35, 0.15), inset -6px 0 10px rgba(55, 30, 12, 0.12)',
-  },
-  faceFront: {
-    transform: 'rotateY(0deg)',
-  },
-  faceBack: {
-    transform: 'rotateY(180deg)',
-  },
-  faceFrontIncoming: {
-    transform: 'rotateY(180deg)',
-  },
-  faceBackIncoming: {
-    transform: 'rotateY(360deg)',
-  },
-  paperBack: {
-    background: 'linear-gradient(180deg, #c9b08a 0%, #b79b74 45%, #b39974 100%)',
-  },
-  portraitWrap: {
-    width: '100%',
-    height: '100%',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-    borderRadius: '2px',
-    border: '1px solid rgba(90, 60, 33, 0.3)',
-    background: '#c8a97e',
-  },
-  portrait: {
-    width: '100%',
-    height: '100%',
-    objectFit: 'contain',
-    objectPosition: 'center center',
-    display: 'block',
-  },
-  name: {
-    marginTop: '12px',
-    fontSize: '14px',
-    letterSpacing: '4px',
-    color: '#3a2a1a',
-    fontFamily: 'serif',
-    textAlign: 'center',
-  },
+function PageContent({ file, name }: { file: string; name: string }) {
+  return (
+    <div className="page-content">
+      <div className="portrait-wrap">
+        <img src={`/authors/${file}`} alt={name} className="portrait" />
+      </div>
+      <p className="name">{name}</p>
+
+      <style jsx>{`
+        .page-content {
+          width: 100%;
+          height: 100%;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+        }
+        .portrait-wrap {
+          width: 100%;
+          flex: 1;
+          min-height: 0;
+          border-radius: 2px;
+          border: 1px solid rgba(90, 60, 33, 0.3);
+          background: #c8a97e;
+          overflow: hidden;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        .portrait {
+          width: 100%;
+          height: 100%;
+          object-fit: contain;
+          object-position: center center;
+          display: block;
+        }
+        .name {
+          margin-top: 12px;
+          font-size: 14px;
+          letter-spacing: 0.26em;
+          color: #3a2a1a;
+          font-family: serif;
+          text-align: center;
+          white-space: nowrap;
+        }
+      `}</style>
+    </div>
+  )
 }
