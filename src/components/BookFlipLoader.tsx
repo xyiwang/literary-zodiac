@@ -94,10 +94,10 @@ export default function BookFlipLoader({ active = true, onComplete }: Props) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex flex-col items-center justify-center"
+      className="fixed inset-0 flex flex-col items-center justify-center"
       style={{
-        background:
-          'radial-gradient(circle at 50% 22%, rgba(33, 38, 72, 0.22), rgba(10, 10, 26, 0.96) 56%), #0a0a1a',
+        zIndex: 9999,
+        background: '#0a0a1a',
       }}
     >
       <div
