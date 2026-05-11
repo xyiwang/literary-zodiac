@@ -194,7 +194,7 @@ export default function ZodiacChart({
       {/* SVG */}
       <svg
         viewBox="-110 -110 620 620"
-        className="w-full max-w-[22rem] sm:max-w-4xl"
+        className="w-full max-w-[22rem] sm:max-w-2xl"
         style={{ filter: 'drop-shadow(0 0 20px rgba(201,168,76,0.08))' }}
       >
         {/* Dark plate */}

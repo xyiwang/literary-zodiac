@@ -170,6 +170,8 @@ export default function BookFlipLoader({ active = true, onComplete }: Props) {
         .sheet-in {
           position: absolute;
           inset: 0;
+          width: 100%;
+          height: 100%;
           transform-origin: left center;
           transform-style: preserve-3d;
           backface-visibility: hidden;
@@ -188,6 +190,8 @@ export default function BookFlipLoader({ active = true, onComplete }: Props) {
         .sheet-face {
           position: absolute;
           inset: 0;
+          width: 100%;
+          height: 100%;
           border-radius: 4px 12px 12px 4px;
           background: #c8a97e;
           padding: 18px;
