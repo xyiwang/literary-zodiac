@@ -2,13 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-
-const LOADING_LINES = [
-  '正在感知你的文字气息……',
-  '比对一百位作家的灵魂……',
-  '描绘你的星盘轮廓……',
-  '即将揭示你从未意识到的事……',
-]
+import BookFlipLoader from '@/components/BookFlipLoader'
 
 interface Star {
   w: number
@@ -21,7 +15,6 @@ interface Star {
 export default function Home() {
   const [text, setText] = useState('')
   const [loading, setLoading] = useState(false)
-  const [loadingLine, setLoadingLine] = useState(0)
   const [error, setError] = useState('')
   const [stars, setStars] = useState<Star[]>([])
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -47,10 +40,6 @@ export default function Home() {
     setError('')
     setLoading(true)
 
-    const interval = setInterval(() => {
-      setLoadingLine(prev => (prev + 1) % LOADING_LINES.length)
-    }, 1800)
-
     try {
       const res = await fetch('/api/analyze', {
         method: 'POST',
@@ -69,14 +58,13 @@ export default function Home() {
     } catch {
       setError('网络错误，请稍后重试')
     } finally {
-      clearInterval(interval)
       setLoading(false)
     }
   }
 
   return (
     <main
-      className="min-h-screen flex flex-col items-center justify-center px-6 py-24"
+      className="min-h-screen flex flex-col items-center justify-center px-6 py-28 md:py-32"
       style={{
         background: '#0a0a1a',
         fontFamily: 'serif',
@@ -106,22 +94,22 @@ export default function Home() {
         ))}
       </div>
 
-      <div className="relative w-full max-w-3xl mx-auto" style={{ zIndex: 1 }}>
+      <div className="relative w-full mx-auto" style={{ zIndex: 1 }}>
         {/* Header */}
-        <div className="text-center mb-20 md:mb-24">
-          <p className="text-xs tracking-[0.42em] text-amber-700/90 mb-5">LITERARY ZODIAC</p>
-          <h1 className="text-4xl md:text-5xl tracking-[0.18em] text-amber-100 mb-7">
+        <div className="text-center mb-24 md:mb-28">
+          <p className="text-[11px] tracking-[0.5em] text-amber-700/85 mb-8">LITERARY ZODIAC</p>
+          <h1 className="text-4xl md:text-5xl tracking-[0.32em] md:tracking-[0.42em] text-amber-100 mb-10 md:mb-12">
             文学星盘
           </h1>
           <p className="text-gray-500 text-sm leading-relaxed max-w-md mx-auto">
             你的文字比你更诚实。<br />
-            输入一段原创文字，发现你与一百位作家之间的隐秘联系。
+            输入一段原创文字，生成你的文学星盘。
           </p>
         </div>
 
         {/* Textarea */}
         <div
-          className="relative mx-auto max-w-2xl rounded-[2px] border border-amber-900/40 bg-[#0b0d1d]/80 p-1.5 shadow-[0_0_0_1px_rgba(201,168,76,0.06),0_18px_38px_rgba(0,0,0,0.45)]"
+          className="relative mx-auto w-full max-w-[600px] rounded-[2px] border border-amber-800/35 p-1.5"
           onMouseDown={() => {
             if (!loading) textareaRef.current?.focus()
           }}
@@ -133,7 +121,7 @@ export default function Home() {
             placeholder="在这里粘贴你的原创文字"
             disabled={loading}
             rows={11}
-            className="w-full rounded-[1px] border border-gray-800/90 bg-[#090b18]/85 px-6 py-6 text-gray-300 text-sm leading-loose resize-none focus:outline-none focus:border-amber-700/70 placeholder-gray-700 transition-colors disabled:opacity-40"
+            className="w-full rounded-[1px] border border-gray-700/70 bg-transparent px-6 py-6 text-gray-300 text-sm leading-loose resize-none focus:outline-none focus:border-amber-700/70 placeholder-gray-700 transition-colors disabled:opacity-40"
             style={{
               fontFamily: 'serif',
               width: '100%',
@@ -160,12 +148,14 @@ export default function Home() {
           <button
             onClick={handleSubmit}
             disabled={loading}
-            className="w-72 max-w-full py-3.5 border border-amber-900 text-amber-200 text-xs tracking-[0.26em] hover:bg-amber-950/40 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+            className="w-full max-w-[600px] py-3 border border-amber-800/60 text-amber-200 text-xs tracking-[0.28em] hover:bg-amber-950/20 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            {loading ? LOADING_LINES[loadingLine] : '解读我的文字 →'}
+            {loading ? '正在翻阅群星中的作家…' : '解读我的文字 →'}
           </button>
         </div>
       </div>
+
+      {loading && <BookFlipLoader active={loading} onComplete={() => {}} />}
     </main>
   )
 }
