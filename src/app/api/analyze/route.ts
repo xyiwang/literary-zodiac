@@ -10,6 +10,17 @@ const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000
 const RATE_LIMIT_MAX_REQUESTS = 5
 const ipRequestLog = new Map<string, number[]>()
 
+function sanitizeInputText(input: string) {
+  // Keep normal Unicode characters, remove unreadable/special control chars.
+  return input
+    .normalize('NFC')
+    .replace(/\uFFFD/g, '')
+    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F]/g, '')
+    .replace(/[\uD800-\uDFFF]/g, '')
+    .replace(/[\uFDD0-\uFDEF\uFFFE\uFFFF]/g, '')
+    .trim()
+}
+
 function randomInt(max: number) {
   return Math.floor(Math.random() * max)
 }
@@ -84,22 +95,29 @@ export async function POST(req: NextRequest) {
     }
 
     const { text } = await req.json()
+    if (typeof text !== 'string') {
+      return NextResponse.json(
+        { error: '请输入有效的文字内容' },
+        { status: 400 }
+      )
+    }
+    const sanitizedText = sanitizeInputText(text)
 
-    if (!text || text.trim().length < 100) {
+    if (!sanitizedText || sanitizedText.length < 100) {
       return NextResponse.json(
         { error: '请输入至少100字的原创文字' },
         { status: 400 }
       )
     }
 
-    if (text.trim().length > 5000) {
+    if (sanitizedText.length > 5000) {
       return NextResponse.json(
         { error: '文字请控制在5000字以内' },
         { status: 400 }
       )
     }
 
-    const prompt = buildPrompt(text.trim())
+    const prompt = buildPrompt(sanitizedText)
 
     const message = await client.messages.create({
       model: 'claude-sonnet-4-5',
